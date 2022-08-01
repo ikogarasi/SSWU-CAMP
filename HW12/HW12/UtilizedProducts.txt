@@ -1,0 +1,4 @@
+﻿Name - test
+Price - 70
+Weight - 5
+Expiration date - 7/10/2022 12:00:00 AM
