@@ -26,6 +26,26 @@ namespace HW12._3
                         : Math.Sin(Double.Parse(operands[i]));
                     args.Push(result);
                 }
+                else if (curr == "0")
+                {
+                    //obviously, i suppose (:
+                    ++i;
+                    args.Push(Double.Parse(operands[i]) * -1);
+                }
+                else if (curr == "_")
+                {
+                    //use temp stack to change sign before digits inside bkts
+                    Stack<double> tempArgs = new Stack<double>();
+                    do
+                    {
+                        double temp = args.Pop();
+                        if (temp != result)
+                            temp *= -1;
+                        tempArgs.Push(temp);
+                    } while (args.Count > 0);
+
+                    args = tempArgs;
+                }
                 else if (Double.TryParse(curr, out digit))
                     args.Push(digit);
                 else
@@ -62,10 +82,10 @@ namespace HW12._3
             char _temp;
             Stack<char> @operator = new Stack<char>();
             expression = expression.Replace(" ", string.Empty);
+            bool isMinusBeforeBkt = false;
             for (int i = 0; i < expression.Length; ++i)
             {
                 char symbol = expression[i];
-                
                 if (char.IsDigit(symbol))
                 {
                     _output.Append(CheckNumberDigits(expression, ref i) + " ");
@@ -76,12 +96,20 @@ namespace HW12._3
                 }
                 else if (symbol == ')')
                 {
+                    //if minus is before brackets, write _
+                    if (isMinusBeforeBkt)
+                    {
+                        _output.Append("_ ");
+                    }
                     _temp = @operator.Pop();
                     while (_temp != '(')
                     {
                         _output.Append(_temp + " ");
                         _temp = @operator.Pop();
                     }
+                    //if there is two and more brackets inside => true
+                    if (!@operator.Contains('('))
+                        isMinusBeforeBkt = false;
                 }
                 else if (symbol == 'c' || symbol == 's')
                 {
@@ -90,8 +118,18 @@ namespace HW12._3
                 }
                 else
                 {
-                    if (@operator.Count != 0 && Predecessor(@operator.Peek(), symbol))
+                    if (symbol == '-' && (i == 0 || (_operators.Contains(expression[i - 1]) && (Char.IsDigit(expression[i + 1]) || expression[i + 1] == '('))))
+                    {   
+                        if (expression[i + 1] == '(') //if negotation operator is before brackets 
+                            isMinusBeforeBkt = true;
+                        else
+                            _output.Append("0 "); //if negotation operator is before operand
+                    }
+                    else if (@operator.Count != 0 && Predecessor(@operator.Peek(), symbol))
                     {
+                        if (isMinusBeforeBkt)
+                            _output.Append("_ ");
+
                         _temp = @operator.Pop();
                         while (Predecessor(_temp, symbol))
                         {
@@ -107,6 +145,8 @@ namespace HW12._3
                         @operator.Push(symbol);
                 }
             }
+            if (isMinusBeforeBkt)
+                _output.Append("_ ");
             while (@operator.Count > 0)
             {
                 _temp = @operator.Pop();
@@ -141,6 +181,25 @@ namespace HW12._3
             }
 
             return temp;
+        }
+
+        private static bool IsMinusForward(string expression, int pos)
+        {
+            if (expression.Length <= pos)
+                throw new ArgumentException();
+
+            if (expression[pos + 1] == '-')
+            {
+                if (Char.IsLetterOrDigit(expression[pos + 2]))
+                {
+                    ++pos;
+                    return true;
+                }
+                throw new ArgumentException();
+            }
+            else if (Char.IsLetterOrDigit(expression[pos + 1]) || expression[pos+1] == '(')
+                return false;
+            else throw new ArgumentException();
         }
     }
 }
